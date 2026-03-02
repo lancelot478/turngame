@@ -1,0 +1,31 @@
+fileFormatVersion: 2
+guid: 9f9a67f476836d646af8f26f3f63f3b8
+TrueTypeFontImporter:
+  externalObjects: {}
+  serializedVersion: 4
+  fontSize: 16
+  forceTextureCase: -2
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontNames:
+  - HYZhengYuan
+  - Sukhumvit Set
+  - Noto Sans SemiCondensed
+  - Noto Sans KR
+  - Rounded Mplus 1c Bold
+  - Arial
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: 3eaa904c62cedad4a9b96d31931a96f2, type: 3}
+  - {fileID: 12800000, guid: 22ddd60d532e7774b814fcb6c214d722, type: 3}
+  - {fileID: 12800000, guid: 1f2a42e3424b4704caa0f908df9c3994, type: 3}
+  - {fileID: 12800000, guid: 030c9da4a1f4baf4b9ec4018d63cad19, type: 3}
+  - {fileID: 12800000, guid: 4b99be38e7eb94247bcacea2fd938cdf, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  useLegacyBoundsCalculation: 0
+  shouldRoundAdvanceValue: 1
+  userData: 
+  assetBundleName: font/hyzhengyuan
+  assetBundleVariant: 
