@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11c6596b5cc7e4d83a9f08fc3bef9e70, type: 3}
+  m_Name: Unit_Mage
+  m_EditorClassIdentifier: Assembly-CSharp::UnitConfig
+  unitId: mage
+  unitName: "\u6CD5\u5E08"
+  maxHP: 80
+  maxMP: 60
+  attack: 30
+  defense: 3
+  speed: 12
+  attackProbability: 0.7
+  modelColor: {r: 0.6, g: 0.2, b: 0.9, a: 1}
+  skills:
+  - Name: "\u706B\u7403\u672F"
+    Type: 0
+    Multiplier: 2.2
+    MPCost: 15
+    Description: "\u6D88\u801715MP\uFF0C\u9020\u62102.2\u500D\u653B\u51FB\u4F24\u5BB3"
+  - Name: "\u51A5\u60F3"
+    Type: 1
+    Multiplier: 1
+    MPCost: 5
+    Description: "\u6D88\u80175MP\uFF0C\u6062\u590D\u5C11\u91CF\u751F\u547D\u503C"

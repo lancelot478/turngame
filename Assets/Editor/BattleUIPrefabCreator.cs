@@ -3,124 +3,183 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-/// <summary>
-/// 编辑器工具：一键生成 BattleUI 预制体，保存到 Resources/Prefabs 目录
-/// 菜单路径：Tools → 创建战斗UI预制体
-/// </summary>
 public static class BattleUIPrefabCreator
 {
     [MenuItem("Tools/创建战斗UI预制体")]
     public static void CreateBattleUIPrefab()
     {
-        // 确保目录存在
-        if (!AssetDatabase.IsValidFolder("Assets/Resources"))
-            AssetDatabase.CreateFolder("Assets", "Resources");
-        if (!AssetDatabase.IsValidFolder("Assets/Resources/Prefabs"))
-            AssetDatabase.CreateFolder("Assets/Resources", "Prefabs");
+        EnsureFolder("Assets/Resources");
+        EnsureFolder("Assets/Resources/Prefabs");
 
-        // 创建根Canvas
         var canvasGO = new GameObject("BattleUI");
         var canvas = canvasGO.AddComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.sortingOrder = 100;
-
         var scaler = canvasGO.AddComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
         canvasGO.AddComponent<GraphicRaycaster>();
 
-        // 添加 BattleUI 组件
         var battleUI = canvasGO.AddComponent<BattleUI>();
         var so = new SerializedObject(battleUI);
 
-        // ===== 玩家状态面板 =====
-        var playerPanel = CreatePanel("PlayerStatus", canvasGO.transform,
+        // ===== 玩家单位容器 (左侧) =====
+        var playerPanel = CreateContainer("PlayerUnitsPanel", canvasGO.transform,
             new Vector2(0, 1), new Vector2(0, 1),
-            new Vector2(20, -20), new Vector2(400, 130),
-            new Color(0, 0, 0, 0.7f));
+            new Vector2(10, -10), new Vector2(360, 400));
+        AddVerticalLayout(playerPanel, 4);
+        so.FindProperty("_playerUnitsContainer").objectReferenceValue = playerPanel.transform;
 
-        var playerName = CreateTMP(playerPanel.transform, "PlayerName", "勇者",
-            new Vector2(15, -10), new Vector2(200, 30), 22, TextAlignmentOptions.Left);
-        so.FindProperty("_playerNameText").objectReferenceValue = playerName;
-
-        CreateTMP(playerPanel.transform, "HPLabel", "HP",
-            new Vector2(15, -45), new Vector2(40, 25), 18, TextAlignmentOptions.Left);
-        var playerHPSlider = CreateSliderBar(playerPanel.transform, "PlayerHP",
-            new Vector2(60, -45), new Vector2(250, 22),
-            new Color(0.2f, 0.8f, 0.2f), new Color(0.3f, 0.3f, 0.3f));
-        so.FindProperty("_playerHPSlider").objectReferenceValue = playerHPSlider;
-
-        var playerHPText = CreateTMP(playerPanel.transform, "HPValue", "100/100",
-            new Vector2(320, -45), new Vector2(80, 25), 16, TextAlignmentOptions.Left);
-        so.FindProperty("_playerHPText").objectReferenceValue = playerHPText;
-
-        CreateTMP(playerPanel.transform, "MPLabel", "MP",
-            new Vector2(15, -75), new Vector2(40, 25), 18, TextAlignmentOptions.Left);
-        var playerMPFill = CreateBar(playerPanel.transform, "PlayerMP",
-            new Vector2(60, -75), new Vector2(250, 22),
-            new Color(0.3f, 0.5f, 1f), new Color(0.3f, 0.3f, 0.3f));
-        so.FindProperty("_playerMPFill").objectReferenceValue = playerMPFill;
-
-        var playerMPText = CreateTMP(playerPanel.transform, "MPValue", "50/50",
-            new Vector2(320, -75), new Vector2(80, 25), 16, TextAlignmentOptions.Left);
-        so.FindProperty("_playerMPText").objectReferenceValue = playerMPText;
-
-        // ===== 敌人状态面板 =====
-        var enemyPanel = CreatePanel("EnemyStatus", canvasGO.transform,
+        // ===== 敌方单位容器 (右侧) =====
+        var enemyPanel = CreateContainer("EnemyUnitsPanel", canvasGO.transform,
             new Vector2(1, 1), new Vector2(1, 1),
-            new Vector2(-400, -20), new Vector2(380, 100),
-            new Color(0, 0, 0, 0.7f));
+            new Vector2(-370, -10), new Vector2(360, 400));
+        AddVerticalLayout(enemyPanel, 4);
+        so.FindProperty("_enemyUnitsContainer").objectReferenceValue = enemyPanel.transform;
 
-        var enemyName = CreateTMP(enemyPanel.transform, "EnemyName", "哥布林",
-            new Vector2(15, -10), new Vector2(200, 30), 22, TextAlignmentOptions.Left);
-        so.FindProperty("_enemyNameText").objectReferenceValue = enemyName;
-
-        CreateTMP(enemyPanel.transform, "EHPLabel", "HP",
-            new Vector2(15, -45), new Vector2(40, 25), 18, TextAlignmentOptions.Left);
-        var enemyHPSlider = CreateSliderBar(enemyPanel.transform, "EnemyHP",
-            new Vector2(60, -45), new Vector2(250, 22),
-            new Color(0.9f, 0.2f, 0.2f), new Color(0.3f, 0.3f, 0.3f));
-        so.FindProperty("_enemyHPSlider").objectReferenceValue = enemyHPSlider;
-
-        var enemyHPText = CreateTMP(enemyPanel.transform, "EHPValue", "80/80",
-            new Vector2(320, -45), new Vector2(80, 25), 16, TextAlignmentOptions.Left);
-        so.FindProperty("_enemyHPText").objectReferenceValue = enemyHPText;
-
-        // ===== 操作按钮面板 =====
+        // ===== 操作面板 (底部居中) =====
         var actionPanel = CreatePanel("ActionPanel", canvasGO.transform,
             new Vector2(0.5f, 0), new Vector2(0.5f, 0),
-            new Vector2(-250, 20), new Vector2(500, 80),
-            new Color(0, 0, 0, 0.8f));
+            new Vector2(-350, 20), new Vector2(700, 110),
+            new Color(0, 0, 0, 0.85f));
+        actionPanel.SetActive(false);
         so.FindProperty("_actionPanel").objectReferenceValue = actionPanel;
 
-        var attackBtn = CreateButton(actionPanel.transform, "AttackBtn", "普通攻击",
-            new Vector2(20, -15), new Vector2(140, 50), new Color(0.8f, 0.4f, 0.1f));
-        so.FindProperty("_attackButton").objectReferenceValue = attackBtn;
+        var unitLabel = CreateTMP(actionPanel.transform, "CurrentUnitLabel", "",
+            new Vector2(10, -5), new Vector2(300, 25), 18, TextAlignmentOptions.Left);
+        so.FindProperty("_currentUnitLabel").objectReferenceValue = unitLabel;
 
-        var skill1Btn = CreateButton(actionPanel.transform, "Skill1Btn", "重击",
-            new Vector2(175, -15), new Vector2(140, 50), new Color(0.6f, 0.2f, 0.8f));
-        so.FindProperty("_skill1Button").objectReferenceValue = skill1Btn;
+        var mpLabel = CreateTMP(actionPanel.transform, "MPLabel", "",
+            new Vector2(320, -5), new Vector2(150, 25), 16, TextAlignmentOptions.Left);
+        so.FindProperty("_mpLabel").objectReferenceValue = mpLabel;
 
-        var skill2Btn = CreateButton(actionPanel.transform, "Skill2Btn", "治疗",
-            new Vector2(330, -15), new Vector2(140, 50), new Color(0.2f, 0.7f, 0.4f));
-        so.FindProperty("_skill2Button").objectReferenceValue = skill2Btn;
+        var btnContainer = new GameObject("ActionButtons");
+        btnContainer.transform.SetParent(actionPanel.transform, false);
+        var btnRT = btnContainer.AddComponent<RectTransform>();
+        btnRT.anchorMin = new Vector2(0, 0);
+        btnRT.anchorMax = new Vector2(1, 1);
+        btnRT.offsetMin = new Vector2(10, 10);
+        btnRT.offsetMax = new Vector2(-10, -35);
+        var hlg = btnContainer.AddComponent<HorizontalLayoutGroup>();
+        hlg.spacing = 8;
+        hlg.childAlignment = TextAnchor.MiddleLeft;
+        hlg.childForceExpandWidth = false;
+        hlg.childForceExpandHeight = true;
+        so.FindProperty("_actionButtonsContainer").objectReferenceValue = btnContainer.transform;
 
-        // ===== 战斗日志面板 =====
+        // ===== 目标提示 =====
+        var targetPrompt = CreatePanel("TargetPrompt", canvasGO.transform,
+            new Vector2(0.5f, 0), new Vector2(0.5f, 0),
+            new Vector2(-100, 135), new Vector2(200, 30),
+            new Color(0.8f, 0.2f, 0.2f, 0.9f));
+        var promptTMP = CreateTMP(targetPrompt.transform, "Text", "← 点击敌方单位选择目标 →",
+            Vector2.zero, Vector2.zero, 14, TextAlignmentOptions.Center);
+        var promptRT = promptTMP.GetComponent<RectTransform>();
+        promptRT.anchorMin = Vector2.zero;
+        promptRT.anchorMax = Vector2.one;
+        promptRT.offsetMin = Vector2.zero;
+        promptRT.offsetMax = Vector2.zero;
+        targetPrompt.SetActive(false);
+        so.FindProperty("_targetPrompt").objectReferenceValue = targetPrompt;
+
+        // ===== 战斗日志 (右下) =====
         var logPanel = CreatePanel("BattleLog", canvasGO.transform,
             new Vector2(1, 0), new Vector2(1, 0),
-            new Vector2(-420, 20), new Vector2(400, 200),
+            new Vector2(-420, 140), new Vector2(400, 200),
             new Color(0, 0, 0, 0.6f));
+        BuildScrollLog(logPanel.transform, so);
 
+        // ===== 结算面板 =====
+        var resultPanel = CreatePanel("ResultPanel", canvasGO.transform,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(-220, -130), new Vector2(440, 260),
+            new Color(0, 0, 0, 0.88f));
+        resultPanel.SetActive(false);
+        so.FindProperty("_resultPanel").objectReferenceValue = resultPanel;
+
+        var resultText = CreateTMP(resultPanel.transform, "ResultText", "",
+            new Vector2(20, -20), new Vector2(400, 80), 42, TextAlignmentOptions.Center);
+        so.FindProperty("_resultText").objectReferenceValue = resultText;
+
+        var restartBtn = CreateButton(resultPanel.transform, "RestartBtn", "再来一次",
+            new Vector2(40, -150), new Vector2(160, 50), new Color(0.3f, 0.6f, 0.9f));
+        so.FindProperty("_restartButton").objectReferenceValue = restartBtn;
+
+        var editFormBtn = CreateButton(resultPanel.transform, "EditFormationBtn", "编辑编队",
+            new Vector2(240, -150), new Vector2(160, 50), new Color(0.6f, 0.5f, 0.2f));
+        so.FindProperty("_editFormationButton").objectReferenceValue = editFormBtn;
+
+        // ===== 编队面板 =====
+        var formationPanel = CreatePanel("FormationPanel", canvasGO.transform,
+            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
+            new Vector2(-250, -220), new Vector2(500, 440),
+            new Color(0.05f, 0.05f, 0.1f, 0.95f));
+        formationPanel.SetActive(false);
+        so.FindProperty("_formationPanel").objectReferenceValue = formationPanel;
+
+        CreateTMP(formationPanel.transform, "Title", "编队选择",
+            new Vector2(20, -10), new Vector2(200, 35), 26, TextAlignmentOptions.Left);
+
+        var slotsInfo = CreateTMP(formationPanel.transform, "SlotsInfo", "已选 0/3",
+            new Vector2(280, -10), new Vector2(200, 35), 20, TextAlignmentOptions.Right);
+        so.FindProperty("_slotsInfoText").objectReferenceValue = slotsInfo;
+
+        // 编队单位滚动区
+        var formScroll = new GameObject("FormScroll");
+        formScroll.transform.SetParent(formationPanel.transform, false);
+        var fsRT = formScroll.AddComponent<RectTransform>();
+        fsRT.anchorMin = new Vector2(0, 0);
+        fsRT.anchorMax = new Vector2(1, 1);
+        fsRT.offsetMin = new Vector2(20, 70);
+        fsRT.offsetMax = new Vector2(-20, -55);
+        formScroll.AddComponent<Image>().color = new Color(0, 0, 0, 0.3f);
+        formScroll.AddComponent<Mask>().showMaskGraphic = true;
+        var fScrollRect = formScroll.AddComponent<ScrollRect>();
+        fScrollRect.horizontal = false;
+        fScrollRect.vertical = true;
+
+        var formContent = new GameObject("FormContent");
+        formContent.transform.SetParent(formScroll.transform, false);
+        var fcRT = formContent.AddComponent<RectTransform>();
+        fcRT.anchorMin = new Vector2(0, 1);
+        fcRT.anchorMax = new Vector2(1, 1);
+        fcRT.pivot = new Vector2(0, 1);
+        fcRT.sizeDelta = new Vector2(0, 0);
+        formContent.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        AddVerticalLayout(formContent, 5);
+        fScrollRect.content = fcRT;
+        so.FindProperty("_formationUnitsContainer").objectReferenceValue = formContent.transform;
+
+        var startBtn = CreateButton(formationPanel.transform, "StartBattleBtn", "开始战斗",
+            new Vector2(160, -385), new Vector2(180, 45), new Color(0.2f, 0.7f, 0.3f));
+        so.FindProperty("_startBattleButton").objectReferenceValue = startBtn;
+
+        // 保存
+        so.ApplyModifiedPropertiesWithoutUndo();
+
+        const string path = "Assets/Resources/Prefabs/BattleUI.prefab";
+        PrefabUtility.SaveAsPrefabAsset(canvasGO, path);
+        Object.DestroyImmediate(canvasGO);
+        AssetDatabase.Refresh();
+        Debug.Log($"[BattleUIPrefabCreator] 战斗UI预制体已生成：{path}");
+    }
+
+    // ========== 构建辅助 ==========
+
+    private static void BuildScrollLog(Transform parent, SerializedObject so)
+    {
         var scrollGO = new GameObject("Scroll");
-        scrollGO.transform.SetParent(logPanel.transform, false);
+        scrollGO.transform.SetParent(parent, false);
         var scrollRT = scrollGO.AddComponent<RectTransform>();
         scrollRT.anchorMin = Vector2.zero;
         scrollRT.anchorMax = Vector2.one;
-        scrollRT.offsetMin = new Vector2(10, 10);
-        scrollRT.offsetMax = new Vector2(-10, -10);
-        var scrollRect = scrollGO.AddComponent<ScrollRect>();
+        scrollRT.offsetMin = new Vector2(8, 8);
+        scrollRT.offsetMax = new Vector2(-8, -8);
         scrollGO.AddComponent<Image>().color = Color.clear;
         scrollGO.AddComponent<Mask>().showMaskGraphic = false;
+        var scrollRect = scrollGO.AddComponent<ScrollRect>();
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
 
         var contentGO = new GameObject("Content");
         contentGO.transform.SetParent(scrollGO.transform, false);
@@ -129,11 +188,10 @@ public static class BattleUIPrefabCreator
         contentRT.anchorMax = new Vector2(1, 1);
         contentRT.pivot = new Vector2(0, 1);
         contentRT.sizeDelta = Vector2.zero;
-        var csf = contentGO.AddComponent<ContentSizeFitter>();
-        csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+        contentGO.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
         var logText = CreateTMP(contentGO.transform, "LogText", "",
-            Vector2.zero, Vector2.zero, 16, TextAlignmentOptions.TopLeft);
+            Vector2.zero, Vector2.zero, 14, TextAlignmentOptions.TopLeft);
         var logRT = logText.GetComponent<RectTransform>();
         logRT.anchorMin = new Vector2(0, 1);
         logRT.anchorMax = new Vector2(1, 1);
@@ -142,41 +200,34 @@ public static class BattleUIPrefabCreator
         logRT.offsetMax = Vector2.zero;
 
         scrollRect.content = contentRT;
-        scrollRect.vertical = true;
-        scrollRect.horizontal = false;
-
         so.FindProperty("_battleLogText").objectReferenceValue = logText;
         so.FindProperty("_logScrollRect").objectReferenceValue = scrollRect;
-
-        // ===== 结算面板 =====
-        var resultPanel = CreatePanel("ResultPanel", canvasGO.transform,
-            new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f),
-            new Vector2(-200, -100), new Vector2(400, 250),
-            new Color(0, 0, 0, 0.85f));
-        resultPanel.SetActive(false);
-        so.FindProperty("_resultPanel").objectReferenceValue = resultPanel;
-
-        var resultText = CreateTMP(resultPanel.transform, "ResultText", "",
-            new Vector2(0, -30), new Vector2(380, 100), 42, TextAlignmentOptions.Center);
-        so.FindProperty("_resultText").objectReferenceValue = resultText;
-
-        var restartBtn = CreateButton(resultPanel.transform, "RestartBtn", "再来一次",
-            new Vector2(120, -160), new Vector2(160, 50), new Color(0.3f, 0.6f, 0.9f));
-        so.FindProperty("_restartButton").objectReferenceValue = restartBtn;
-
-        // 应用序列化
-        so.ApplyModifiedPropertiesWithoutUndo();
-
-        // 保存为预制体
-        const string path = "Assets/Resources/Prefabs/BattleUI.prefab";
-        PrefabUtility.SaveAsPrefabAsset(canvasGO, path);
-        Object.DestroyImmediate(canvasGO);
-
-        AssetDatabase.Refresh();
-        Debug.Log($"[BattleUIPrefabCreator] 战斗UI预制体已生成：{path}");
     }
 
-    // ========== 构建辅助方法 ==========
+    private static GameObject CreateContainer(string name, Transform parent,
+        Vector2 anchorMin, Vector2 anchorMax, Vector2 position, Vector2 size)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        var rt = go.AddComponent<RectTransform>();
+        rt.anchorMin = anchorMin;
+        rt.anchorMax = anchorMax;
+        rt.pivot = anchorMin;
+        rt.anchoredPosition = position;
+        rt.sizeDelta = size;
+        return go;
+    }
+
+    private static void AddVerticalLayout(GameObject go, float spacing)
+    {
+        var vlg = go.AddComponent<VerticalLayoutGroup>();
+        vlg.spacing = spacing;
+        vlg.childAlignment = TextAnchor.UpperCenter;
+        vlg.childForceExpandWidth = false;
+        vlg.childForceExpandHeight = false;
+        vlg.childControlWidth = false;
+        vlg.childControlHeight = false;
+    }
 
     private static GameObject CreatePanel(string name, Transform parent,
         Vector2 anchorMin, Vector2 anchorMax,
@@ -190,9 +241,7 @@ public static class BattleUIPrefabCreator
         rt.pivot = anchorMin;
         rt.anchoredPosition = position;
         rt.sizeDelta = size;
-
-        var img = go.AddComponent<Image>();
-        img.color = bgColor;
+        go.AddComponent<Image>().color = bgColor;
         return go;
     }
 
@@ -207,94 +256,12 @@ public static class BattleUIPrefabCreator
         rt.pivot = new Vector2(0, 1);
         rt.anchoredPosition = position;
         rt.sizeDelta = size;
-
         var tmp = go.AddComponent<TextMeshProUGUI>();
         tmp.text = text;
         tmp.fontSize = fontSize;
         tmp.alignment = alignment;
         tmp.color = Color.white;
         return tmp;
-    }
-
-    private static Image CreateBar(Transform parent, string name,
-        Vector2 position, Vector2 size, Color fillColor, Color bgColor)
-    {
-        var bgGO = new GameObject(name + "BG");
-        bgGO.transform.SetParent(parent, false);
-        var bgRT = bgGO.AddComponent<RectTransform>();
-        bgRT.anchorMin = new Vector2(0, 1);
-        bgRT.anchorMax = new Vector2(0, 1);
-        bgRT.pivot = new Vector2(0, 1);
-        bgRT.anchoredPosition = position;
-        bgRT.sizeDelta = size;
-        bgGO.AddComponent<Image>().color = bgColor;
-
-        var fillGO = new GameObject(name + "Fill");
-        fillGO.transform.SetParent(bgGO.transform, false);
-        var fillRT = fillGO.AddComponent<RectTransform>();
-        fillRT.anchorMin = Vector2.zero;
-        fillRT.anchorMax = Vector2.one;
-        fillRT.offsetMin = Vector2.zero;
-        fillRT.offsetMax = Vector2.zero;
-
-        var fillImg = fillGO.AddComponent<Image>();
-        fillImg.color = fillColor;
-        fillImg.type = Image.Type.Filled;
-        fillImg.fillMethod = Image.FillMethod.Horizontal;
-        fillImg.fillAmount = 1f;
-        return fillImg;
-    }
-
-    private static Slider CreateSliderBar(Transform parent, string name,
-        Vector2 position, Vector2 size, Color fillColor, Color bgColor)
-    {
-        var root = new GameObject(name + "Slider");
-        root.transform.SetParent(parent, false);
-        var rootRT = root.AddComponent<RectTransform>();
-        rootRT.anchorMin = new Vector2(0, 1);
-        rootRT.anchorMax = new Vector2(0, 1);
-        rootRT.pivot = new Vector2(0, 1);
-        rootRT.anchoredPosition = position;
-        rootRT.sizeDelta = size;
-
-        var bg = new GameObject("Background");
-        bg.transform.SetParent(root.transform, false);
-        var bgRT = bg.AddComponent<RectTransform>();
-        bgRT.anchorMin = Vector2.zero;
-        bgRT.anchorMax = Vector2.one;
-        bgRT.offsetMin = Vector2.zero;
-        bgRT.offsetMax = Vector2.zero;
-        var bgImg = bg.AddComponent<Image>();
-        bgImg.color = bgColor;
-
-        var fillArea = new GameObject("Fill Area");
-        fillArea.transform.SetParent(root.transform, false);
-        var fillAreaRT = fillArea.AddComponent<RectTransform>();
-        fillAreaRT.anchorMin = Vector2.zero;
-        fillAreaRT.anchorMax = Vector2.one;
-        fillAreaRT.offsetMin = Vector2.zero;
-        fillAreaRT.offsetMax = Vector2.zero;
-
-        var fill = new GameObject("Fill");
-        fill.transform.SetParent(fillArea.transform, false);
-        var fillRT = fill.AddComponent<RectTransform>();
-        fillRT.anchorMin = Vector2.zero;
-        fillRT.anchorMax = Vector2.one;
-        fillRT.offsetMin = Vector2.zero;
-        fillRT.offsetMax = Vector2.zero;
-        var fillImg = fill.AddComponent<Image>();
-        fillImg.color = fillColor;
-
-        var slider = root.AddComponent<Slider>();
-        slider.minValue = 0f;
-        slider.maxValue = 1f;
-        slider.value = 1f;
-        slider.direction = Slider.Direction.LeftToRight;
-        slider.targetGraphic = fillImg;
-        slider.fillRect = fillRT;
-        slider.interactable = false;
-
-        return slider;
     }
 
     private static Button CreateButton(Transform parent, string name, string label,
@@ -308,16 +275,15 @@ public static class BattleUIPrefabCreator
         rt.pivot = new Vector2(0, 1);
         rt.anchoredPosition = position;
         rt.sizeDelta = size;
-
         go.AddComponent<Image>().color = color;
 
         var btn = go.AddComponent<Button>();
-        var colors = btn.colors;
-        colors.normalColor = color;
-        colors.highlightedColor = color * 1.2f;
-        colors.pressedColor = color * 0.8f;
-        colors.disabledColor = new Color(0.4f, 0.4f, 0.4f, 0.5f);
-        btn.colors = colors;
+        var c = btn.colors;
+        c.normalColor = color;
+        c.highlightedColor = color * 1.2f;
+        c.pressedColor = color * 0.8f;
+        c.disabledColor = new Color(0.35f, 0.35f, 0.35f, 0.5f);
+        btn.colors = c;
 
         var textGO = new GameObject("Text");
         textGO.transform.SetParent(go.transform, false);
@@ -326,7 +292,6 @@ public static class BattleUIPrefabCreator
         textRT.anchorMax = Vector2.one;
         textRT.offsetMin = Vector2.zero;
         textRT.offsetMax = Vector2.zero;
-
         var tmp = textGO.AddComponent<TextMeshProUGUI>();
         tmp.text = label;
         tmp.fontSize = 20;
@@ -334,5 +299,15 @@ public static class BattleUIPrefabCreator
         tmp.color = Color.white;
 
         return btn;
+    }
+
+    private static void EnsureFolder(string folder)
+    {
+        if (AssetDatabase.IsValidFolder(folder)) return;
+        var idx = folder.LastIndexOf('/');
+        var parent = folder.Substring(0, idx);
+        var current = folder.Substring(idx + 1);
+        EnsureFolder(parent);
+        AssetDatabase.CreateFolder(parent, current);
     }
 }

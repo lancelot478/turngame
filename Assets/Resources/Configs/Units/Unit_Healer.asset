@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 11c6596b5cc7e4d83a9f08fc3bef9e70, type: 3}
+  m_Name: Unit_Healer
+  m_EditorClassIdentifier: Assembly-CSharp::UnitConfig
+  unitId: healer
+  unitName: "\u7267\u5E08"
+  maxHP: 85
+  maxMP: 80
+  attack: 12
+  defense: 6
+  speed: 9
+  attackProbability: 0.7
+  modelColor: {r: 1, g: 0.9, b: 0.5, a: 1}
+  skills:
+  - Name: "\u6CBB\u6108\u4E4B\u5149"
+    Type: 1
+    Multiplier: 2.5
+    MPCost: 20
+    Description: "\u6D88\u801720MP\uFF0C\u6062\u590D\u5927\u91CF\u751F\u547D\u503C"

@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 08206df341b564fb184146ca420922df, type: 3}
+  m_Name: EnemyFormation
+  m_EditorClassIdentifier: Assembly-CSharp::TeamFormationConfig
+  maxActiveSlots: 3
+  unitPool:
+  - {fileID: 11400000, guid: 71d4c158b91b6413fa85405fa2a6fd42, type: 2}
+  - {fileID: 11400000, guid: 60d5b924dacac446d866d130a3ebe67a, type: 2}
+  - {fileID: 11400000, guid: a242a065b1323430e9b5f48484db4e4f, type: 2}
