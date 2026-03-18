@@ -129,19 +129,66 @@ public class GameInitializer : MonoBehaviour
         go.AddComponent<StandaloneInputModule>();
     }
 
+    // 场景包围盒半宽/半深（根据单位分布留出余量）
+    private const float SceneHalfWidth = 5.5f;
+    private const float SceneHalfDepth = 4.5f;
+    private const float CameraPitchDeg = 40f;
+    private const float CameraFOV = 20f;
+
+    private Camera _mainCam;
+
     private void SetupCamera()
     {
-        Camera cam = Camera.main;
-        if (cam == null)
+        _mainCam = Camera.main;
+        if (_mainCam == null)
         {
             var camGO = new GameObject("MainCamera");
-            cam = camGO.AddComponent<Camera>();
+            _mainCam = camGO.AddComponent<Camera>();
             camGO.tag = "MainCamera";
         }
-        cam.transform.position = new Vector3(0, 5, -10);
-        cam.transform.rotation = Quaternion.Euler(25, 0, 0);
-        cam.backgroundColor = new Color(0.15f, 0.15f, 0.25f);
-        cam.clearFlags = CameraClearFlags.SolidColor;
+
+        _mainCam.fieldOfView = CameraFOV;
+        _mainCam.backgroundColor = new Color(0.15f, 0.15f, 0.25f);
+        _mainCam.clearFlags = CameraClearFlags.SolidColor;
+        _mainCam.nearClipPlane = 0.3f;
+        _mainCam.farClipPlane = 100f;
+
+        FitCameraToScene();
+    }
+
+    /// <summary>
+    /// 斜 40° 俯视 + 根据屏幕宽高比自动拉远距离，保证所有单位可见
+    /// </summary>
+    private void FitCameraToScene()
+    {
+        float pitchRad = CameraPitchDeg * Mathf.Deg2Rad;
+        float vFovRad = CameraFOV * Mathf.Deg2Rad;
+        float aspect = (float)Screen.width / Screen.height;
+        float hFovRad = 2f * Mathf.Atan(Mathf.Tan(vFovRad * 0.5f) * aspect);
+
+        // 水平方向：需要把 x ∈ [-SceneHalfWidth, +SceneHalfWidth] 装进水平 FOV
+        float distForWidth = SceneHalfWidth / Mathf.Tan(hFovRad * 0.5f);
+
+        // 垂直方向：地面 z 轴深度经倾斜角投影到视平面后的表观高度
+        float apparentHalfHeight = SceneHalfDepth / Mathf.Cos(pitchRad);
+        float distForHeight = apparentHalfHeight / Mathf.Tan(vFovRad * 0.5f);
+
+        // 取两者最大值，再加 15% 安全边距
+        float dist = Mathf.Max(distForWidth, distForHeight) * 1.15f;
+
+        _mainCam.transform.position = new Vector3(
+            0f,
+            dist * Mathf.Sin(pitchRad),
+            -dist * Mathf.Cos(pitchRad)
+        );
+        _mainCam.transform.rotation = Quaternion.Euler(CameraPitchDeg, 0f, 0f);
+    }
+
+    private void LateUpdate()
+    {
+        // 运行时屏幕旋转或分辨率变化时重新适配
+        if (_mainCam != null)
+            FitCameraToScene();
     }
 
     private void SetupLighting()
@@ -168,21 +215,27 @@ public class GameInitializer : MonoBehaviour
         go.transform.position = position;
         go.transform.localScale = new Vector3(0.8f, 1f, 0.8f);
 
-        var renderer = go.GetComponent<Renderer>();
-        renderer.material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        renderer.material.color = color;
+       SetMaterialColor(go.GetComponent<Renderer>(), color);
         return go.transform;
     }
 
     private void CreateGround()
     {
-        var ground = GameObject.CreatePrimitive(PrimitiveType.Plane);
+          // 用扁平 Cube 替代 Plane，避免 MeshCollider 在 iOS IL2CPP 下被 Strip
+        var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
         ground.name = "Ground";
-        ground.transform.position = Vector3.zero;
-        ground.transform.localScale = new Vector3(2, 1, 2);
+        ground.transform.position = new Vector3(0, -0.25f, 0);
+        ground.transform.localScale = new Vector3(20, 0.5f, 20);
 
-        var renderer = ground.GetComponent<Renderer>();
-        renderer.material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-        renderer.material.color = new Color(0.3f, 0.35f, 0.3f);
+        SetMaterialColor(ground.GetComponent<Renderer>(), new Color(0.3f, 0.35f, 0.3f));
+    }
+    /// <summary>
+    /// 通过 renderer.material 自动实例化材质再改色，
+    /// 避免 Shader.Find 在 iOS 打包后返回 null
+    /// </summary>
+    private static void SetMaterialColor(Renderer renderer, Color color)
+    {
+        if (renderer == null) return;
+        renderer.material.color = color;
     }
 }
